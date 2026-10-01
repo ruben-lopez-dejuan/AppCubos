@@ -10,6 +10,11 @@ from collections import defaultdict
 import time
 
 
+WCA_REST_API_V1_BASE = (
+    "https://raw.githubusercontent.com/robiningelbrecht/"
+    "wca-rest-api/refs/heads/v1"
+)
+
 
 # --- CACHÉ GLOBAL ---
 COMP_CACHE = {}
@@ -45,7 +50,7 @@ def get_comp_data(comp_id):
     Checks cache first to avoid network calls.
     """
     if comp_id not in COMP_CACHE:
-        url = f'https://raw.githubusercontent.com/robiningelbrecht/wca-rest-api/master/api/competitions/{comp_id}.json'
+        url = f"{WCA_REST_API_V1_BASE}/competitions/{comp_id}.json"
         data = fetch_json(url)
         if data:
             COMP_CACHE[comp_id] = data
@@ -553,6 +558,7 @@ def get_scrambles(comp_id):
 
     return structured_data
 
+@st.cache_data(ttl=24 * 60 * 60, show_spinner=False)
 def get_organized_competitions(name_to_search):
     """
     Busca todas las competiciones donde 'name_to_search' aparece como organizador.
@@ -560,19 +566,26 @@ def get_organized_competitions(name_to_search):
     """
     all_competitions = []
 
-    # Función auxiliar para descargar una página específica
     def fetch_page(i):
-        url = f"https://raw.githubusercontent.com/robiningelbrecht/wca-rest-api/master/api/competitions-page-{i}.json"
+        url = f"{WCA_REST_API_V1_BASE}/competitions-page-{i}.json"
         return fetch_json(url)
 
-    # El snippet original iteraba 18 páginas. Ponemos 20 por seguridad.
-    # Usamos ThreadPoolExecutor para hacer las peticiones en paralelo.
-    pages_to_check = range(1, 21)
-    
-    results = []
-    # Reutilizamos la lógica de threads para velocidad
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(fetch_page, pages_to_check))
+    # La API v1 expone 1.000 competiciones por página y publica el total en
+    # la primera respuesta. Calculamos las páginas para no dejar fuera datos
+    # cuando se añadan nuevas competiciones.
+    first_page = fetch_page(1)
+    if not first_page or 'items' not in first_page:
+        return pd.DataFrame()
+
+    pagination = first_page.get('pagination', {})
+    page_size = int(pagination.get('size') or len(first_page['items']) or 1)
+    total_items = int(first_page.get('total') or len(first_page['items']))
+    total_pages = max(1, (total_items + page_size - 1) // page_size)
+
+    results = [first_page]
+    if total_pages > 1:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results.extend(executor.map(fetch_page, range(2, total_pages + 1)))
 
     for data in results:
         if data and 'items' in data:
