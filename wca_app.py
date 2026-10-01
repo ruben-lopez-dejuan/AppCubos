@@ -787,8 +787,10 @@ def render_competition_list(data):
             overflow-x: auto; /* Permite scroll horizontal en móviles */
             max-height: 450px; 
             overflow-y: auto;
-            border: 1px solid rgba(49, 51, 63, 0.2);
-            border-radius: 8px;
+            background-color: #ffffff;
+            border: 1px solid #d7dce2;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
         }
 
         .wca-table {
@@ -804,18 +806,28 @@ def render_competition_list(data):
             position: sticky;
             top: 0;
             z-index: 10;
-            background-color: #e0e0e0; /* Gris claro para destacar */
-            color: #000000 !important; /* Texto negro forzado */
+            background-color: #eef1f5;
+            color: #111827 !important;
             font-weight: bold;
             padding: 12px;
             text-align: left;
-            border-bottom: 2px solid #ccc;
+            border-bottom: 2px solid #c8ced7;
         }
 
         .wca-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+            background-color: #ffffff;
+            color: #1f2937 !important;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .wca-table tbody tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        .wca-table tbody tr:hover td {
+            background-color: #fff1f2;
         }
 
         /* Ajuste de Iconos para Modo Oscuro */
@@ -827,20 +839,6 @@ def render_competition_list(data):
             filter: none;
         }
 
-        @media (prefers-color-scheme: dark) {
-            /* Invierte los iconos WCA de negro a blanco en modo oscuro */
-            img.wca-icon {
-                filter: invert(1) brightness(2);
-            }
-            /* Mantiene el cabecero legible en modo oscuro */
-            .wca-table thead th {
-                background-color: #cccccc; 
-                color: #000000 !important;
-            }
-            .wca-table td {
-                color: #ffffff;
-            }
-        }
         </style>
         """, unsafe_allow_html=True)
 
